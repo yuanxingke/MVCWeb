@@ -108,3 +108,21 @@ Visit `http://localhost:5000/` to see the API documentation and available endpoi
 - Uses browser-like headers to avoid being blocked by anti-bot measures
 - Validates URL format before making requests
 - Comprehensive error handling to prevent information leakage
+
+## PHP Implementation
+
+You can also run the same API using PHP (no external libraries required, uses cURL):
+
+1. Ensure PHP is installed (version 7.4+ recommended) with cURL enabled.
+2. From the repo root, start PHP's built-in server:
+```bash
+php -S 0.0.0.0:8000 -t php
+```
+3. Test the API:
+```bash
+curl -X POST http://localhost:8000/api/fetch-html \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://httpbin.org/html"}' | jq .
+```
+
+The PHP endpoint structure and responses mirror the Flask version. The root (`/`) returns API info, and `/api/fetch-html` accepts a JSON body with `url`.
