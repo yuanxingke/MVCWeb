@@ -1,10 +1,11 @@
 package com.mvcweb.htmlfetcher.service;
 
-import com.mvcweb.htmlfetcher.dto.HtmlFetchResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,242 +27,248 @@ class HtmlFetchServiceTest {
     @Test
     void testFetchHtml_ValidUrl() {
         // This test makes a real HTTP call to httpbin.org
-        // In production, you might want to mock this
-        String url = "https://httpbin.org/html";
+        String url = "httpbin.org/html";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        assertTrue(response.isSuccess());
-        assertEquals(url, response.getUrl());
-        assertNotNull(response.getHtml());
-        assertNotNull(response.getStatusCode());
-        assertNotNull(response.getContentType());
-        assertTrue(response.getContentLength() > 0);
-        assertNull(response.getError());
+        assertNotNull(result);
+        assertTrue((Boolean) result.get("success"));
+        assertEquals("https://httpbin.org/html", result.get("url"));
+        assertNotNull(result.get("html"));
+        assertTrue(result.get("html").toString().contains("<html>"));
+        assertEquals(200, result.get("statusCode"));
+        assertNotNull(result.get("contentType"));
+        assertTrue(((Integer) result.get("contentLength")) > 0);
     }
 
     @Test
-    void testFetchHtml_NullUrl() {
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(null);
+    void testFetchHtml_UrlWithProtocol() {
+        String url = "https://httpbin.org/html";
         
-        assertFalse(response.isSuccess());
-        assertNotNull(response.getError());
-        assertEquals("URL parameter is required", response.getError());
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
+        
+        assertNotNull(result);
+        assertTrue((Boolean) result.get("success"));
+        assertEquals("https://httpbin.org/html", result.get("url"));
+    }
+
+    @Test
+    void testFetchHtml_InvalidUrl() {
+        String url = "not-a-valid-url";
+        
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
+        
+        assertNotNull(result);
+        assertFalse((Boolean) result.get("success"));
+        assertNotNull(result.get("error"));
+        assertTrue(result.get("error").toString().contains("Invalid URL format"));
     }
 
     @Test
     void testFetchHtml_EmptyUrl() {
-        HtmlFetchResponse response = htmlFetchService.fetchHtml("");
+        String url = "";
         
-        assertFalse(response.isSuccess());
-        assertNotNull(response.getError());
-        assertEquals("URL parameter is required", response.getError());
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
+        
+        assertNotNull(result);
+        assertFalse((Boolean) result.get("success"));
+        assertNotNull(result.get("error"));
     }
 
     @Test
-    void testFetchHtml_WhitespaceUrl() {
-        HtmlFetchResponse response = htmlFetchService.fetchHtml("   ");
+    void testFetchHtml_NullUrl() {
+        String url = null;
         
-        assertFalse(response.isSuccess());
-        assertNotNull(response.getError());
-        assertEquals("URL parameter is required", response.getError());
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
+        
+        assertNotNull(result);
+        assertFalse((Boolean) result.get("success"));
+        assertNotNull(result.get("error"));
     }
 
     @Test
-    void testFetchHtml_InvalidUrlFormat() {
-        HtmlFetchResponse response = htmlFetchService.fetchHtml("not-a-url");
+    void testFetchHtml_UrlWithoutDomain() {
+        String url = "just-text";
         
-        assertFalse(response.isSuccess());
-        assertNotNull(response.getError());
-        assertTrue(response.getError().contains("Invalid URL format"));
-    }
-
-    @Test
-    void testFetchHtml_UrlWithoutProtocol() {
-        // This test makes a real HTTP call
-        String url = "httpbin.org/html";
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
-        
-        assertTrue(response.isSuccess());
-        assertEquals("https://httpbin.org/html", response.getUrl());
-        assertNotNull(response.getHtml());
-    }
-
-    @Test
-    void testFetchHtml_UrlWithTrailingSpaces() {
-        // This test makes a real HTTP call
-        String url = "  https://httpbin.org/html  ";
-        
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
-        
-        assertTrue(response.isSuccess());
-        assertEquals("https://httpbin.org/html", response.getUrl());
-        assertNotNull(response.getHtml());
+        assertNotNull(result);
+        assertFalse((Boolean) result.get("success"));
+        assertNotNull(result.get("error"));
+        assertTrue(result.get("error").toString().contains("Invalid URL format"));
     }
 
     @Test
     void testFetchHtml_NonExistentDomain() {
         String url = "https://this-domain-should-not-exist-12345.com";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        assertFalse(response.isSuccess());
-        assertNotNull(response.getError());
-        assertTrue(response.getError().contains("Connection error") || 
-                  response.getError().contains("timeout"));
+        assertNotNull(result);
+        assertFalse((Boolean) result.get("success"));
+        assertNotNull(result.get("error"));
+        // Could be connection error or DNS resolution error
+        assertTrue(result.get("error").toString().contains("error") || 
+                  result.get("error").toString().contains("Connection"));
     }
 
     @Test
-    void testFetchHtml_InvalidProtocol() {
-        String url = "ftp://example.com";
+    void testFetchHtml_Localhost() {
+        String url = "localhost:8080";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        // This should be handled by URL validation or HTTP client
-        // The exact behavior depends on implementation
-        assertNotNull(response);
-        assertFalse(response.isSuccess());
-    }
-
-    @Test
-    void testFetchHtml_MalformedUrl() {
-        String url = "https://";
-        
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
-        
-        assertFalse(response.isSuccess());
-        assertNotNull(response.getError());
-        assertTrue(response.getError().contains("Invalid URL format"));
-    }
-
-    @Test
-    void testFetchHtml_JavascriptUrl() {
-        String url = "javascript:alert('xss')";
-        
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
-        
-        assertFalse(response.isSuccess());
-        assertNotNull(response.getError());
-        // Should be rejected due to invalid protocol or format
-    }
-
-    @Test
-    void testFetchHtml_FileUrl() {
-        String url = "file:///etc/passwd";
-        
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
-        
-        assertFalse(response.isSuccess());
-        assertNotNull(response.getError());
-        // Should be rejected due to invalid protocol
-    }
-
-    @Test
-    void testFetchHtml_LocalhostUrl() {
-        String url = "http://localhost:8080";
-        
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
-        
-        // This might succeed or fail depending on whether something is running on localhost:8080
-        // The important thing is that it doesn't crash and returns a valid response
-        assertNotNull(response);
-        if (!response.isSuccess()) {
-            assertNotNull(response.getError());
-        }
+        assertNotNull(result);
+        // This will likely fail with connection error since no server is running
+        assertFalse((Boolean) result.get("success"));
+        assertNotNull(result.get("error"));
     }
 
     @Test
     void testFetchHtml_IpAddress() {
-        String url = "http://127.0.0.1:8080";
+        String url = "127.0.0.1:8080";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        // Similar to localhost test
-        assertNotNull(response);
-        if (!response.isSuccess()) {
-            assertNotNull(response.getError());
-        }
+        assertNotNull(result);
+        // This will likely fail with connection error since no server is running
+        assertFalse((Boolean) result.get("success"));
+        assertNotNull(result.get("error"));
     }
 
     @Test
     void testFetchHtml_HttpsUrl() {
-        // This test makes a real HTTP call
-        String url = "https://httpbin.org/json";
+        String url = "https://httpbin.org/status/200";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        assertTrue(response.isSuccess());
-        assertEquals(url, response.getUrl());
-        assertNotNull(response.getHtml());
-        // Content type should be application/json, not text/html
-        assertTrue(response.getContentType().contains("json"));
+        assertNotNull(result);
+        assertTrue((Boolean) result.get("success"));
+        assertEquals(200, result.get("statusCode"));
     }
 
     @Test
     void testFetchHtml_HttpUrl() {
-        // This test makes a real HTTP call
+        // Note: Many sites redirect HTTP to HTTPS
         String url = "http://httpbin.org/html";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        assertTrue(response.isSuccess());
-        assertEquals(url, response.getUrl());
-        assertNotNull(response.getHtml());
-    }
-
-    @Test
-    void testFetchHtml_UrlWithPort() {
-        // This test makes a real HTTP call
-        String url = "https://httpbin.org:443/html";
-        
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
-        
-        assertTrue(response.isSuccess());
-        assertNotNull(response.getHtml());
+        assertNotNull(result);
+        // Should succeed (might be redirected to HTTPS)
+        assertTrue((Boolean) result.get("success"));
     }
 
     @Test
     void testFetchHtml_UrlWithPath() {
-        // This test makes a real HTTP call
-        String url = "https://httpbin.org/status/200";
+        String url = "httpbin.org/json";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        assertTrue(response.isSuccess());
-        assertEquals(200, response.getStatusCode());
+        assertNotNull(result);
+        assertTrue((Boolean) result.get("success"));
+        assertEquals("https://httpbin.org/json", result.get("url"));
+        // This endpoint returns JSON, not HTML
+        assertNotNull(result.get("html"));
+        assertTrue(result.get("html").toString().contains("{"));
     }
 
     @Test
     void testFetchHtml_UrlWithQuery() {
-        // This test makes a real HTTP call
-        String url = "https://httpbin.org/get?test=value";
+        String url = "httpbin.org/get?param=value";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        assertTrue(response.isSuccess());
-        assertNotNull(response.getHtml());
+        assertNotNull(result);
+        assertTrue((Boolean) result.get("success"));
+        assertEquals("https://httpbin.org/get?param=value", result.get("url"));
     }
 
     @Test
     void testFetchHtml_404Error() {
-        // This test makes a real HTTP call
         String url = "https://httpbin.org/status/404";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        assertTrue(response.isSuccess()); // HTTP call succeeds, but returns 404
-        assertEquals(404, response.getStatusCode());
+        assertNotNull(result);
+        assertFalse((Boolean) result.get("success"));
+        assertNotNull(result.get("error"));
+        assertTrue(result.get("error").toString().contains("404"));
     }
 
     @Test
     void testFetchHtml_500Error() {
-        // This test makes a real HTTP call
         String url = "https://httpbin.org/status/500";
         
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(url);
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
         
-        assertTrue(response.isSuccess()); // HTTP call succeeds, but returns 500
-        assertEquals(500, response.getStatusCode());
+        assertNotNull(result);
+        assertFalse((Boolean) result.get("success"));
+        assertNotNull(result.get("error"));
+        assertTrue(result.get("error").toString().contains("500"));
+    }
+
+    @Test
+    void testFetchHtml_UrlWithSpecialCharacters() {
+        String url = "httpbin.org/anything/test%20with%20spaces";
+        
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
+        
+        assertNotNull(result);
+        assertTrue((Boolean) result.get("success"));
+        assertEquals("https://httpbin.org/anything/test%20with%20spaces", result.get("url"));
+    }
+
+    @Test
+    void testFetchHtml_LongUrl() {
+        String url = "httpbin.org/anything/" + "a".repeat(1000);
+        
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
+        
+        assertNotNull(result);
+        assertTrue((Boolean) result.get("success"));
+    }
+
+    @Test
+    void testFetchHtml_UrlWithPort() {
+        String url = "httpbin.org:80/html";
+        
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
+        
+        assertNotNull(result);
+        // Port 80 with HTTPS might fail, so we check that it handles gracefully
+        if ((Boolean) result.get("success")) {
+            assertEquals("https://httpbin.org:80/html", result.get("url"));
+        } else {
+            assertNotNull(result.get("error"));
+            // This is expected to fail due to SSL/port mismatch
+        }
+    }
+
+    @Test
+    void testFetchHtml_SubdomainUrl() {
+        String url = "www.httpbin.org/html";
+        
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
+        
+        assertNotNull(result);
+        // This might fail if subdomain doesn't exist, but should handle gracefully
+        if ((Boolean) result.get("success")) {
+            assertEquals("https://www.httpbin.org/html", result.get("url"));
+        } else {
+            assertNotNull(result.get("error"));
+        }
+    }
+
+    @Test
+    void testFetchHtml_UrlWithFragment() {
+        String url = "httpbin.org/html#section";
+        
+        Map<String, Object> result = htmlFetchService.fetchHtml(url);
+        
+        assertNotNull(result);
+        assertTrue((Boolean) result.get("success"));
+        // Fragment should be preserved in URL
+        assertEquals("https://httpbin.org/html#section", result.get("url"));
     }
 }

@@ -1,14 +1,10 @@
 package com.mvcweb.htmlfetcher.controller;
 
-import com.mvcweb.htmlfetcher.dto.HtmlFetchRequest;
-import com.mvcweb.htmlfetcher.dto.HtmlFetchResponse;
 import com.mvcweb.htmlfetcher.service.HtmlFetchService;
-import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -24,20 +20,14 @@ public class HtmlFetchController {
 
     private static final Logger logger = LoggerFactory.getLogger(HtmlFetchController.class);
 
-    private final HtmlFetchService htmlFetchService;
-
     @Autowired
-    public HtmlFetchController(HtmlFetchService htmlFetchService) {
-        this.htmlFetchService = htmlFetchService;
-    }
+    private HtmlFetchService htmlFetchService;
 
     /**
-     * Root endpoint that provides API documentation.
-     *
-     * @return API documentation information
+     * Root endpoint providing API documentation
      */
     @GetMapping("/")
-    public ResponseEntity<Map<String, Object>> getApiInfo() {
+    public ResponseEntity<Map<String, Object>> index() {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "MVCWeb API");
         
@@ -57,61 +47,37 @@ public class HtmlFetchController {
     }
 
     /**
-     * Endpoint to fetch HTML content from a provided URL.
-     *
-     * @param request The HTML fetch request containing the URL
-     * @param bindingResult Validation results
-     * @return ResponseEntity containing the HTML content or error information
+     * Fetch HTML content from a user-provided URL
      */
     @PostMapping("/fetch-html")
-    public ResponseEntity<HtmlFetchResponse> fetchHtml(
-            @Valid @RequestBody HtmlFetchRequest request,
-            BindingResult bindingResult) {
-
+    public ResponseEntity<Map<String, Object>> fetchHtml(@RequestBody Map<String, String> request) {
         logger.info("Received HTML fetch request: {}", request);
 
-        // Check for validation errors
-        if (bindingResult.hasErrors()) {
-            String errorMessage = bindingResult.getFieldErrors().stream()
-                    .map(error -> error.getDefaultMessage())
-                    .findFirst()
-                    .orElse("Invalid request parameters");
-            
-            logger.error("Validation error: {}", errorMessage);
-            return ResponseEntity.badRequest()
-                    .body(HtmlFetchResponse.error(errorMessage));
+        // Validate request
+        if (request == null || !request.containsKey("url")) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "URL parameter is required");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
-        // Fetch HTML content
-        HtmlFetchResponse response = htmlFetchService.fetchHtml(request.getUrl());
-
-        // Return appropriate HTTP status based on response
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            // Determine HTTP status code based on error type
-            if (response.getError().contains("timeout")) {
-                return ResponseEntity.status(408).body(response); // Request Timeout
-            } else if (response.getError().contains("Connection error")) {
-                return ResponseEntity.status(503).body(response); // Service Unavailable
-            } else if (response.getError().contains("Invalid URL")) {
-                return ResponseEntity.badRequest().body(response); // Bad Request
-            } else {
-                return ResponseEntity.status(500).body(response); // Internal Server Error
-            }
+        String url = request.get("url");
+        if (url == null || url.trim().isEmpty()) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "URL parameter cannot be blank");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
-    }
 
-    /**
-     * Global exception handler for validation errors.
-     *
-     * @param e The exception
-     * @return Error response
-     */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<HtmlFetchResponse> handleException(Exception e) {
-        logger.error("Unexpected error: {}", e.getMessage(), e);
-        return ResponseEntity.status(500)
-                .body(HtmlFetchResponse.error("Internal server error occurred while processing request"));
+        try {
+            Map<String, Object> result = htmlFetchService.fetchHtml(url.trim());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Error fetching HTML: {}", e.getMessage(), e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "Internal server error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
     }
 }
