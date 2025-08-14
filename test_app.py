@@ -41,7 +41,7 @@ class TestFlaskApp(unittest.TestCase):
         
         data = json.loads(response.data)
         self.assertFalse(data['success'])
-        self.assertIn('URL parameter is required', data['error'])
+        self.assertIn('Invalid JSON data or Content-Type must be application/json', data['error'])
     
     def test_fetch_html_missing_url_parameter(self):
         """Test fetch_html endpoint with missing URL parameter"""
@@ -324,8 +324,11 @@ class TestFlaskApp(unittest.TestCase):
                                 data='url=https://example.com',
                                 content_type='application/x-www-form-urlencoded')
         
-        # Should still return 400 because JSON parsing will fail
+        # Should return 400 because JSON parsing will fail
         self.assertEqual(response.status_code, 400)
+        data = json.loads(response.data)
+        self.assertFalse(data['success'])
+        self.assertIn('Invalid JSON data or Content-Type must be application/json', data['error'])
 
 class TestURLValidation(unittest.TestCase):
     """Additional tests focused on URL validation edge cases"""

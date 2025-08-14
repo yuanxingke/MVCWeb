@@ -29,13 +29,23 @@ def fetch_html():
     try:
         # Get URL from request
         data = request.get_json()
-        if not data or 'url' not in data:
+        if data is None:
+            return jsonify({
+                'error': 'Invalid JSON data or Content-Type must be application/json',
+                'success': False
+            }), 400
+        
+        if 'url' not in data:
             return jsonify({
                 'error': 'URL parameter is required',
                 'success': False
             }), 400
         
         url = data['url'].strip()
+        
+        # Add protocol if missing
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
         
         # Validate URL format
         parsed_url = urlparse(url)
@@ -45,9 +55,14 @@ def fetch_html():
                 'success': False
             }), 400
         
-        # Add protocol if missing
-        if not url.startswith(('http://', 'https://')):
-            url = 'https://' + url
+        # Additional validation for netloc to ensure it looks like a domain
+        if not parsed_url.netloc or '.' not in parsed_url.netloc.split(':')[0]:
+            # Allow localhost and IP addresses
+            if parsed_url.netloc not in ['localhost', '127.0.0.1'] and not parsed_url.netloc.replace('.', '').replace(':', '').isdigit():
+                return jsonify({
+                    'error': 'Invalid URL format. Please provide a complete URL with protocol (http/https)',
+                    'success': False
+                }), 400
         
         # Set headers to mimic a real browser request
         headers = {
@@ -102,6 +117,13 @@ def fetch_html():
         }), 500
         
     except Exception as e:
+        # Handle JSON parsing errors specifically
+        if "415 Unsupported Media Type" in str(e) or "application/json" in str(e):
+            return jsonify({
+                'error': 'Invalid JSON data or Content-Type must be application/json',
+                'success': False
+            }), 400
+        
         app.logger.error(f"Unexpected error: {str(e)}")
         return jsonify({
             'error': 'Internal server error occurred while fetching HTML',
