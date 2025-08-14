@@ -1,6 +1,6 @@
 # MVCWeb
 
-A Flask web application that provides an API endpoint to fetch HTML content from user-provided URLs.
+A web application that provides API endpoints to fetch HTML content from user-provided URLs. Available in both Python (Flask) and Java (Spring Boot) implementations.
 
 ## Features
 
@@ -9,33 +9,54 @@ A Flask web application that provides an API endpoint to fetch HTML content from
 - URL validation and automatic protocol addition
 - Browser-like headers to avoid blocking
 - JSON response format with detailed metadata
+- **Two implementations**: Python (Flask) and Java (Spring Boot)
+- Comprehensive unit tests for both implementations
 
-## Installation
+## Implementations
 
-1. Clone the repository:
+### 🐍 Python Implementation (Flask)
+- **Location**: Root directory (`app.py`, `test_app.py`)
+- **Framework**: Flask 2.3.3
+- **Testing**: unittest and pytest
+- **Port**: 5000
+- **Documentation**: See sections below
+
+### ☕ Java Implementation (Spring Boot)
+- **Location**: `java/` directory
+- **Framework**: Spring Boot 3.2.0 with Java 17
+- **Testing**: JUnit 5 with Mockito
+- **Port**: 8080
+- **Documentation**: See `java/README.md`
+
+## Quick Start
+
+### Python Implementation
 ```bash
-git clone <repository-url>
-cd MVCWeb
-```
-
-2. Install dependencies:
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-3. Run the application:
-```bash
+# Run the application
 python app.py
+
+# Server starts on http://localhost:5000
 ```
 
-The server will start on `http://localhost:5000`
+### Java Implementation
+```bash
+# Navigate to Java directory
+cd java
 
-## API Usage
+# Build and run with Maven
+mvn spring-boot:run
 
-### Endpoint: `/api/fetch-html`
+# Server starts on http://localhost:8080
+```
 
-**Method:** POST  
-**Content-Type:** application/json
+## API Usage (Both Implementations)
+
+### Endpoint: `POST /api/fetch-html`
+
+**Content-Type:** `application/json`
 
 **Request Body:**
 ```json
