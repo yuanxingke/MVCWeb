@@ -102,6 +102,54 @@ The API handles various types of errors:
 
 Visit `http://localhost:5000/` to see the API documentation and available endpoints.
 
+## Testing
+
+The project includes comprehensive unit tests covering all functionality:
+
+### Running Tests
+
+**Using unittest (built-in):**
+```bash
+python -m unittest test_app.py -v
+```
+
+**Using pytest (recommended):**
+```bash
+# Install testing dependencies first
+pip install pytest pytest-cov
+
+# Run tests with coverage
+python -m pytest test_app.py
+```
+
+**Using the test runner script:**
+```bash
+# Run with unittest
+python run_tests.py
+
+# Run with pytest
+python run_tests.py pytest
+```
+
+### Test Coverage
+
+The tests cover:
+- ✅ API endpoint functionality
+- ✅ URL validation and edge cases
+- ✅ Error handling (timeout, connection errors, HTTP errors)
+- ✅ Request header validation
+- ✅ Response format validation
+- ✅ Various invalid URL formats
+- ✅ Protocol auto-addition for URLs without protocol
+- ✅ Edge cases (empty URLs, whitespace, wrong HTTP methods)
+
+### Test Structure
+
+- `TestFlaskApp`: Main test class for API functionality
+- `TestURLValidation`: Focused tests for URL validation edge cases
+- Uses mocking to avoid making real HTTP requests during testing
+- Includes both positive and negative test cases
+
 ## Security Considerations
 
 - The API includes a 30-second timeout to prevent hanging requests
