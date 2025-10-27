@@ -108,3 +108,35 @@ Visit `http://localhost:5000/` to see the API documentation and available endpoi
 - Uses browser-like headers to avoid being blocked by anti-bot measures
 - Validates URL format before making requests
 - Comprehensive error handling to prevent information leakage
+
+## PHP Implementation
+
+A PHP version of the API is available under `php/index.php` and mirrors the Flask behavior.
+
+### Requirements
+- PHP 8.0+ with the cURL extension enabled
+
+On Debian/Ubuntu-based systems:
+```bash
+sudo apt-get update && sudo apt-get install -y php-cli php-curl
+```
+
+### Run the PHP server
+From the project root:
+```bash
+php -S 0.0.0.0:8000 -t php
+```
+The server will start on `http://localhost:8000`.
+
+### API Usage (PHP server)
+- **Endpoint:** `POST /api/fetch-html`
+- **Content-Type:** `application/json`
+
+Example using curl:
+```bash
+curl -X POST http://localhost:8000/api/fetch-html \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://httpbin.org/html"}'
+```
+
+The JSON response format matches the Flask version documented above.
